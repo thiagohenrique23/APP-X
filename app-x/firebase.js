@@ -1,6 +1,6 @@
-import firebase from "firebase/compat/app";
-import "firebase/compat/auth";
-import "firebase/compat/firestore";
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import 'firebase/compat/firestore';
 
 let firebaseConfig = {
   apiKey: "AIzaSyDZOkFnShGeGTXYJJBIaRkJVbU3_U6VZe4",
@@ -14,12 +14,29 @@ let firebaseConfig = {
 
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
-  console.log(`Conectado: ${firebase.apps.length}`);
-} else {
-  console.log(`Conectando... ${firebase.apps.length}`);
 }
 
 const auth = firebase.auth();
+const db = firebase.firestore();
 
-export { auth };
+const createUser = async (email, password, nome, tipo, superior) => {
+  try {
+    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+
+    await db.collection('users').doc(user.uid).set({
+      nome,
+      email,
+      superior,
+      tipo
+    });
+
+    console.log('Usuário criado com sucesso:', user.uid);
+  } catch (error) {
+    console.error('Erro ao criar usuário:', error);
+    throw error;
+  }
+};
+
+export { auth, db, createUser };
 export default firebase;
