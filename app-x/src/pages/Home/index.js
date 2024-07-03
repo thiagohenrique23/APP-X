@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import * as Animatable from "react-native-animatable";
-import { auth } from "../../../firebase.js"
+import { auth, db } from "../../../firebase";
+import { useNavigation } from "@react-navigation/native";
 
 export default function Home() {
   const [userDisplayName, setUserDisplayName] = useState(null);
+  const navigation = useNavigation();
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        setUserDisplayName(user.displayName);
+        const userDoc = await db.collection("users").doc(user.uid).get();
+        if (userDoc.exists) {
+          setUserDisplayName(userDoc.data().nome);
+        }
       } else {
         setUserDisplayName(null);
       }
@@ -21,11 +26,17 @@ export default function Home() {
   return (
     <View style={styles.container}>
       <Animatable.View animation="fadeInLeft" delay={500} style={styles.containerHeader}>
-        <Text style={styles.message}>Olá, {userDisplayName}</Text>
+        <Text style={styles.message}>Olá,{userDisplayName}</Text>
       </Animatable.View>
 
-      <Animatable.View animation="fadeInUp" style={styles.containerForm}>
-        {/* Aqui você pode adicionar mais conteúdo da tela inicial */}
+      <Animatable.View animation="fadeInUp" style={styles.containerHome}>
+        <TouchableOpacity onPress={() => navigation.navigate('Register')} style={styles.btn}>
+          <Text style={styles.btnText}>Criar novo Integrante</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => navigation.navigate('ViewMembers')} style={styles.btn}>
+          <Text style={styles.btnText}>Ver Integrantes</Text>
+        </TouchableOpacity>
       </Animatable.View>
     </View>
   );
@@ -46,23 +57,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#FFF",
   },
-  containerForm: {
+  containerHome: {
     backgroundColor: "#FFFF",
     flex: 1,
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
     paddingStart: "5%",
     paddingEnd: "5%",
-  },
-  title: {
-    fontSize: 20,
-    marginTop: 28,
-  },
-  input: {
-    borderBottomWidth: 1,
-    height: 40,
-    marginBottom: 12,
-    fontSize: 16,
   },
   btn: {
     backgroundColor: "#000",

@@ -85,7 +85,6 @@ const styles = StyleSheet.create({
   },
   btn: {
     backgroundColor: "#000",
-    width: "100%",
     borderRadius: 4,
     paddingVertical: 8,
     marginTop: 14,
@@ -95,6 +94,5 @@ const styles = StyleSheet.create({
   btnText: {
     color: "#FFF",
     fontSize: 18,
-    fontWeight: "bold",
   },
 });
