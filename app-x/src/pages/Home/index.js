@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 
 export default function Home() {
   const [userDisplayName, setUserDisplayName] = useState(null);
+  const [userType, setUserType] = useState(null); // State to store user type
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -14,9 +15,11 @@ export default function Home() {
         const userDoc = await db.collection("users").doc(user.uid).get();
         if (userDoc.exists) {
           setUserDisplayName(userDoc.data().nome);
+          setUserType(userDoc.data().tipo); // Set user type from Firestore
         }
       } else {
         setUserDisplayName(null);
+        setUserType(null);
       }
     });
 
@@ -26,15 +29,18 @@ export default function Home() {
   return (
     <View style={styles.container}>
       <Animatable.View animation="fadeInLeft" delay={500} style={styles.containerHeader}>
-        <Text style={styles.message}>Olá,{userDisplayName}</Text>
+        <Text style={styles.message}>Olá, {userDisplayName}</Text>
       </Animatable.View>
 
       <Animatable.View animation="fadeInUp" style={styles.containerHome}>
-        <TouchableOpacity onPress={() => navigation.navigate('Register')} style={styles.btn}>
-          <Text style={styles.btnText}>Criar novo Integrante</Text>
-        </TouchableOpacity>
+        {/* Renderizar o botão apenas se o tipo de usuário não for 'apoiador' */}
+        {userType !== "apoiador" && (
+          <TouchableOpacity onPress={() => navigation.navigate('Register')} style={styles.btn}>
+            <Text style={styles.btnText}>Criar novo Integrante</Text>
+          </TouchableOpacity>
+        )}
 
-        <TouchableOpacity onPress={() => navigation.navigate('ViewMembers')} style={styles.btn}>
+        <TouchableOpacity onPress={() => navigation.navigate('Users')} style={styles.btn}>
           <Text style={styles.btnText}>Ver Integrantes</Text>
         </TouchableOpacity>
       </Animatable.View>
