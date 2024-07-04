@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View, Alert, Modal } from 'react-native';
 import * as Animatable from 'react-native-animatable';
-import { createUser, auth, db } from '../../../firebase'; 
+import { createUser, auth, db } from '../../../firebase';
 import { useNavigation } from '@react-navigation/native';
 
 export default function Register() {
@@ -12,7 +12,7 @@ export default function Register() {
   const [superior, setSuperior] = useState('');
   const [superiores, setSuperiores] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalType, setModalType] = useState(''); 
+  const [modalType, setModalType] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const navigation = useNavigation();
@@ -30,7 +30,11 @@ export default function Register() {
         querySnapshot = await db.collection('users').where('tipo', '==', 'coordenador').get();
       } else if (type === 'apoiador') {
         querySnapshot = await db.collection('users').where('tipo', '==', 'líder').get();
+      } else {
+        setSuperiores([]);
+        return;
       }
+
       const fetchedSuperiores = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setSuperiores(fetchedSuperiores);
     } catch (error) {
@@ -46,10 +50,10 @@ export default function Register() {
         return;
       }
       await createUser(email, password, name, type, superior);
-  
+
       setSuccessMessage('Usuário criado com sucesso!');
       clearFields();
-  
+
       setTimeout(() => {
         setSuccessMessage('');
         setErrorMessage('');
@@ -59,7 +63,7 @@ export default function Register() {
       setErrorMessage(`Erro ao criar usuário: ${error.message}`);
     }
   };
-  
+
   const checkEmailExists = async (email) => {
     const snapshot = await db.collection('users').where('email', '==', email).get();
     return !snapshot.empty;
