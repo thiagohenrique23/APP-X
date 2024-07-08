@@ -13,6 +13,7 @@ export default function Register() {
   const [superiores, setSuperiores] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState('');
+  const [availableTypes, setAvailableTypes] = useState([]);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const navigation = useNavigation();
@@ -44,21 +45,36 @@ export default function Register() {
 
   const handleRegister = async () => {
     try {
-      const emailExists = await checkEmailExists(email);
-      if (emailExists) {
-        setErrorMessage('O endereço de e-mail já está em uso por outra conta.');
+      const user = auth.currentUser;
+      const doc = await db.collection('users').doc(user.uid).get();
+      if (!doc.exists) {
+        setErrorMessage('Documento do usuário não encontrado.');
         return;
       }
-      await createUser(email, password, name, type, superior);
+      const currentUserType = doc.data().tipo;
 
-      setSuccessMessage('Usuário criado com sucesso!');
-      clearFields();
+      if (currentUserType === 'admin' ||
+         (currentUserType === 'coordenador' && (type === 'líder' || type === 'apoiador')) ||
+         (currentUserType === 'líder' && type === 'apoiador')) {
 
-      setTimeout(() => {
-        setSuccessMessage('');
-        setErrorMessage('');
-        navigation.navigate('Home');
-      }, 2000);
+        const emailExists = await checkEmailExists(email);
+        if (emailExists) {
+          setErrorMessage('O endereço de e-mail já está em uso por outra conta.');
+          return;
+        }
+        await createUser(email, password, name, type, superior);
+
+        setSuccessMessage('Usuário criado com sucesso!');
+        clearFields();
+
+        setTimeout(() => {
+          setSuccessMessage('');
+          setErrorMessage('');
+          navigation.navigate('Home');
+        }, 2000);
+      } else {
+        setErrorMessage('Você não tem permissão para criar este tipo de usuário.');
+      }
     } catch (error) {
       setErrorMessage(`Erro ao criar usuário: ${error.message}`);
     }
@@ -77,8 +93,25 @@ export default function Register() {
     setSuperior('');
   };
 
-  const openModal = (type) => {
+  const openModal = async (type) => {
     setModalType(type);
+    if (type === 'tipo') {
+      const user = auth.currentUser;
+      const doc = await db.collection('users').doc(user.uid).get();
+      if (!doc.exists) {
+        setErrorMessage('Documento do usuário não encontrado.');
+        return;
+      }
+      const currentUserType = doc.data().tipo;
+
+      if (currentUserType === 'admin') {
+        setAvailableTypes(['coordenador', 'líder', 'apoiador']);
+      } else if (currentUserType === 'coordenador') {
+        setAvailableTypes(['líder', 'apoiador']);
+      } else if (currentUserType === 'líder') {
+        setAvailableTypes(['apoiador']);
+      }
+    }
     setModalVisible(true);
   };
 
@@ -171,15 +204,11 @@ export default function Register() {
               <Text style={styles.modalTitle}>{modalType === 'tipo' ? 'Selecione o tipo' : 'Selecione o superior'}</Text>
               {modalType === 'tipo' ? (
                 <View style={styles.modalList}>
-                  <TouchableOpacity onPress={() => handleSelectItem('coordenador')} style={styles.modalListItem}>
-                    <Text style={styles.modalListItemText}>Coordenador</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => handleSelectItem('líder')} style={styles.modalListItem}>
-                    <Text style={styles.modalListItemText}>Líder</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => handleSelectItem('apoiador')} style={styles.modalListItem}>
-                    <Text style={styles.modalListItemText}>Apoiador</Text>
-                  </TouchableOpacity>
+                  {availableTypes.map(type => (
+                    <TouchableOpacity key={type} onPress={() => handleSelectItem(type)} style={styles.modalListItem}>
+                      <Text style={styles.modalListItemText}>{type}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               ) : (
                 <View style={styles.modalList}>
@@ -190,6 +219,7 @@ export default function Register() {
                   ))}
                 </View>
               )}
+
             </View>
           </View>
         </Modal>
@@ -228,16 +258,17 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   input: {
-    borderBottomWidth: 1,
-    height: 40,
-    marginBottom: 20,
-    fontSize: 16,
-    paddingLeft: 10,
+    borderWidth: 1,
+    borderColor: '#CCC',
+    borderRadius: 4,
+    paddingHorizontal: 10,
+    height: 44,
+    marginBottom: 10,
   },
   buttonContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 15,
   },
   button: {
     borderWidth: 1,
