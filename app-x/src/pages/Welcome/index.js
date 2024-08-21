@@ -14,6 +14,8 @@ export default function Welcome() {
             <View style={styles.containerLogo}>
 
                 <Image
+                    delay={100}
+                    animation='flipInX'
                     source={require('../../assets/logo.png')}
                     style={{ width: '100%' }}
                     resizeMode='contain'
@@ -26,7 +28,7 @@ export default function Welcome() {
                 <Text style={styles.title}>Monitore, organize de qualquer lugar!</Text>
                 <Text style={styles.text}>Faça login para começar</Text>
 
-                <TouchableOpacity onPress={ () => navigation.navigate('Login')} style={styles.btn}>
+                <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.btn}>
 
                     <Text style={styles.btnText}>Acessar</Text>
 

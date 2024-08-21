@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View, Alert, Modal } from "react-native";
 import * as Animatable from "react-native-animatable";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { db } from "../../../firebase";
+import { db, auth } from "../../../firebase";
 
 export default function EditUser() {
   const [nome, setNome] = useState("");
@@ -12,9 +12,33 @@ export default function EditUser() {
   const [superiores, setSuperiores] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigation = useNavigation();
   const route = useRoute();
   const { userId } = route.params;
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          const currentUserDoc = await db.collection("users").doc(currentUser.uid).get();
+          if (currentUserDoc.exists) {
+            const currentUserData = currentUserDoc.data();
+            setIsAdmin(currentUserData.tipo === "admin");
+            console.log("Current user type:", currentUserData.tipo); // Debugging line
+          } else {
+            Alert.alert("Erro", "Dados do usuário logado não encontrados.");
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao buscar dados do usuário logado:", error);
+        Alert.alert("Erro", "Não foi possível buscar os dados do usuário logado.");
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -26,6 +50,7 @@ export default function EditUser() {
           setEmail(userData.email);
           setTipo(userData.tipo);
           setSuperior(userData.superior);
+          console.log("User data fetched:", userData); // Debugging line
         } else {
           Alert.alert("Erro", "Usuário não encontrado.");
           navigation.goBack();
@@ -51,6 +76,7 @@ export default function EditUser() {
       }
       const fetchedSuperiores = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setSuperiores(fetchedSuperiores);
+      console.log("Fetched superiores:", fetchedSuperiores); // Debugging line
     };
 
     if (tipo) fetchSuperiores();
@@ -64,6 +90,17 @@ export default function EditUser() {
     } catch (error) {
       console.error("Erro ao atualizar usuário:", error);
       Alert.alert("Erro", "Não foi possível atualizar o usuário.");
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await db.collection("users").doc(userId).delete();
+      Alert.alert("Sucesso", "Usuário excluído com sucesso.");
+      navigation.goBack();
+    } catch (error) {
+      console.error("Erro ao excluir usuário:", error);
+      Alert.alert("Erro", "Não foi possível excluir o usuário.");
     }
   };
 
@@ -124,9 +161,16 @@ export default function EditUser() {
           </View>
         )}
 
-        <TouchableOpacity style={styles.btn} onPress={handleUpdate}>
-          <Text style={styles.btnText}>Atualizar</Text>
-        </TouchableOpacity>
+        {isAdmin && (
+          <>
+            <TouchableOpacity style={styles.btn} onPress={handleUpdate}>
+              <Text style={styles.btnText}>Atualizar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btn} onPress={handleDelete}>
+              <Text style={styles.btnText}>Excluir</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </Animatable.View>
 
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.btn}>
@@ -277,4 +321,4 @@ const styles = StyleSheet.create({
   modalListItemText: {
     fontSize: 16,
   },
-})
+});
